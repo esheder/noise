@@ -25,11 +25,10 @@ class Parameters:
     σ1: float
     σ2: float
     λd: float
-    stepper: SystemGen
 
     @classmethod
     def from_xs(cls, λa: float, λf: float, ν: float, ν2: float, s: float,
-                λd: float, *, stepper: SystemGen) -> "Parameters":
+                λd: float) -> "Parameters":
         """Create a parameter object from more trivial cross section data.
 
         Parameters
@@ -40,23 +39,21 @@ class Parameters:
         ν2 - Second moment of the fission multiplicity distribution.
         s - Source rate in the core. [1/sec]
         λd - Rate of detection of core flux. [1/sec]
-        stepper - Stepping mechanism to move the system forward in time.
 
         Returns
         -------
         A parameter object with the data required for the formalism in the paper.
 
         """
-        α = ν*λf -λa - λd
+        α = ν*λf - λa - λd
         σ1 = np.sqrt((s/α) * (λa + λf*(1. - 2.*ν + ν2)) + s)
         σ2 = np.sqrt(λd * s / α)
 
-        return cls(α, s, σ1, σ2, λd, stepper)
+        return cls(α, s, σ1, σ2, λd)
 
     @classmethod
     def from_dubi(cls, ρ: float, Λ: float, s: float, ν: float,
-                  ν2: float, pd: float,
-                  *, stepper: SystemGen) -> "Parameters":
+                  ν2: float, pd: float) -> "Parameters":
         assert ρ < 0.
         k = 1. / (1. - ρ)
         α = ρ / Λ
@@ -66,7 +63,7 @@ class Parameters:
         λf, λd, λa = [p / lifetime for p in [pf, pd, pa]]
         σ1 = np.sqrt(-(s / α) * (λa + λf * (1. - (2. * ν) + ν2)) + s)
         σ2 = np.sqrt(-λd * s / α)
-        return cls(α, s, σ1, σ2, λd, stepper)
+        return cls(α, s, σ1, σ2, λd)
 
     @property
     def equilibrium_flux(self) -> float:
