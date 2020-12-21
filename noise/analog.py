@@ -5,8 +5,6 @@ to observe the mean and variance of said counts in said windows.
 """
 from dataclasses import dataclass
 from enum import IntEnum
-from functools import lru_cache
-from itertools import chain
 from typing import Generator, Sequence, Tuple
 import logging
 
@@ -71,26 +69,20 @@ def _detections(sources: np.array, par: AnalogParameters, randgen: np.random.Gen
                 ) -> Generator[float, None, None]:
     initial = len(sources)
     so_far = 0
-    estimated = 0.5 * initial / (1. - par.k)
+    estimated = initial / (1. - par.k)
     last = 0.
     while len(sources):
-        size = (len(sources), )
-        lags = randgen.exponential(par.lifetime, size=size)
+        lags = randgen.exponential(par.lifetime, size=sources.size)
         tevents = sources + lags
-        processes = randgen.choice(a=[e.value for e in Process], p=par.prob_vector, size=size)
-        yield from (t for t, process in zip(tevents, processes)
-                    if process == Process.Detection and t <= par.tmax)
-        fission_times = tuple(t for t, process in zip(tevents, processes)
-                              if process == Process.Fission and t <= par.tmax)
-        new_size = (len(fission_times),)
-        multiples = randgen.choice(a=np.arange(len(par.multiplicity)), p=par.multiplicity, size=new_size)
-        topdex = multiples.cumsum()
-        sources = np.zeros(new_size, dtype=np.float)
-        if new_size[0]:
-            sources[:topdex[0]] = fission_times[0]
-            for k, (i, j) in enumerate(zip(topdex[:-1], topdex[1:])):
-                sources[i:j] = fission_times[k+1]
-        so_far += size[0]
+        processes = randgen.choice(a=[e.value for e in Process], p=par.prob_vector, size=sources.size)
+        detect = processes == Process.Detection
+        fission = processes == Process.Fission
+        legal = tevents <= par.tmax
+        yield list(tevents[detect & legal])
+        fission_times = tevents[fission & legal]
+        multiples = randgen.choice(a=np.arange(len(par.multiplicity)), p=par.multiplicity, size=fission_times.size)
+        so_far += sources.size
+        sources = np.repeat(fission_times, multiples)
         covered = so_far/estimated
         if covered > last + 0.1:
             logger.info(f'Finished {covered:3.0%}')
@@ -98,7 +90,7 @@ def _detections(sources: np.array, par: AnalogParameters, randgen: np.random.Gen
 
 
 def detections(*args, **kwargs) -> np.array:
-    return np.fromiter(_detections(*args, **kwargs), dtype=np.float)
+    return np.array(sum(_detections(*args, **kwargs), start=[]), dtype=np.float)
 
 
 def _feynman_y(signal: np.array, tmax: float) -> Generator[Tuple[float, float, float], None, None]:
