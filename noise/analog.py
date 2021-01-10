@@ -5,7 +5,7 @@ to observe the mean and variance of said counts in said windows.
 """
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Generator, Sequence, Tuple
+from typing import Generator, Sequence, Tuple, List
 import logging
 
 import numpy as np
@@ -57,6 +57,10 @@ class AnalogParameters:
     def α(self) -> float:
         return self.ρ / self.lifetime
 
+    @property
+    def pa(self) -> float:
+        return 1. - self.pf - self.pd
+
 
 def spread_sources(t: float, s: float, randgen: np.random.Generator) -> np.array:
     points = int(s * t)
@@ -66,7 +70,7 @@ def spread_sources(t: float, s: float, randgen: np.random.Generator) -> np.array
 
 
 def _detections(sources: np.array, par: AnalogParameters, randgen: np.random.Generator
-                ) -> Generator[float, None, None]:
+                ) -> Generator[List[float], None, None]:
     initial = len(sources)
     so_far = 0
     estimated = initial / (1. - par.k)
