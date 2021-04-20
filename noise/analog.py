@@ -79,8 +79,8 @@ def _detections(sources: np.array, par: AnalogParameters, randgen: np.random.Gen
         lags = randgen.exponential(par.lifetime, size=sources.size)
         tevents = sources + lags
         processes = randgen.choice(a=[e.value for e in Process], p=par.prob_vector, size=sources.size)
-        detect = processes == Process.Detection
-        fission = processes == Process.Fission
+        detect = processes == Process.Detection.value
+        fission = processes == Process.Fission.value
         legal = tevents <= par.tmax
         yield list(tevents[detect & legal])
         fission_times = tevents[fission & legal]
@@ -93,8 +93,8 @@ def _detections(sources: np.array, par: AnalogParameters, randgen: np.random.Gen
             last = covered
 
 
-def detections(*args, **kwargs) -> np.array:
-    return np.array(sum(_detections(*args, **kwargs), start=[]), dtype=np.float)
+def detections(*args, func=_detections, **kwargs) -> np.array:
+    return np.array(sum(func(*args, **kwargs), []), dtype=np.float)
 
 
 def _feynman_y(signal: np.array, tmax: float) -> Generator[Tuple[float, float, float], None, None]:
