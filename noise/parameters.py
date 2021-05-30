@@ -1,3 +1,4 @@
+from collections import namedtuple
 from dataclasses import dataclass
 from typing import Callable, Tuple
 
@@ -68,3 +69,9 @@ class Parameters:
     @property
     def equilibrium_flux(self) -> float:
         return abs(self.s / self.α)
+
+    def to_named_tuple(self):
+        return Parameters_NT(self.α, self.s, self.σ1, self.σ2, self.λd, self.equilibrium_flux)
+
+
+Parameters_NT = namedtuple('Parameters_NT', ['α', 's', 'σ1', 'σ2', 'λd', 'equilibrium_flux'])
