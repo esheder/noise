@@ -57,8 +57,8 @@ def test_plot_signal():
     plt.show()
 
 
-reactivities = -np.logspace(-4.5, -2, num=3)
-times = np.linspace(60., 600., num=3)
+reactivities = -np.logspace(-4.5, -2, num=10)
+times = np.linspace(60., 600., num=10)
 cases = [pytest.param(reac, t, id=f'{reac=:.3e}, {t=:.0f}') for reac, t in product(reactivities, times)]
 
 
@@ -68,5 +68,5 @@ cases = [pytest.param(reac, t, id=f'{reac=:.3e}, {t=:.0f}') for reac, t in produ
 def test_speed_sde(reactivity, time, benchmark):
     par = Parameters.from_dubi(reactivity, 5e-5, 1e7, 2.42, 36., 1e-4)
     ts = np.linspace(0, time, int(time//1e-3))
-    res = benchmark(signal_make, ts, par, randgen=rand_gen)
+    res = benchmark(signal_make, ts, par, rand_gen=rand_gen)
 
