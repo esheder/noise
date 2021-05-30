@@ -1,13 +1,15 @@
 from functools import partial
+from itertools import product
 
 import pytest
+import numpy as np
 from hypothesis import strategies as st, settings, Phase, given
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 
 from noise import Parameters
 from noise.analytic import fit_to_feynman_y, feynman_y_model
-from noise.sdesolve import feynman_y_by_signal
+from noise.sdesolve import feynman_y_by_signal, signal_make, rand_gen
 
 times = st.floats(min_value=60., max_value=600.)
 reactivities = st.floats(min_value=-1000e-5, max_value=-60e-5)
@@ -53,3 +55,18 @@ def test_plot_signal():
     plt.semilogx(ts, fitted, '-r')
     plt.grid()
     plt.show()
+
+
+reactivities = -np.logspace(-4.5, -2, num=3)
+times = np.linspace(60., 600., num=3)
+cases = [pytest.param(reac, t, id=f'{reac=:.3e}, {t=:.0f}') for reac, t in product(reactivities, times)]
+
+
+@pytest.mark.parametrize(
+    ['reactivity', 'time'],
+    cases)
+def test_speed_sde(reactivity, time, benchmark):
+    par = Parameters.from_dubi(reactivity, 5e-5, 1e7, 2.42, 36., 1e-4)
+    ts = np.linspace(0, time, int(time//1e-3))
+    res = benchmark(signal_make, ts, par, randgen=rand_gen)
+
