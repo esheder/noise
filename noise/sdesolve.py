@@ -34,7 +34,7 @@ def signal_make(ts: np.ndarray, par: Parameters, *, rand_gen: np.random.Generato
     return y
 
 
-def _cut_to_bins(signal: np.ndarray, ts: np.ndarray, skip: int) -> Tuple[float, float, float]:
+def cut_to_bins(signal: np.ndarray, ts: np.ndarray, skip: int) -> Tuple[float, float, float]:
     skipsignal = np.diff(signal.cumsum()[::skip])
     fy = (skipsignal.var(ddof=1) / skipsignal.mean()) - 1.
     sigma = 1. / np.sqrt(len(skipsignal))
@@ -43,15 +43,16 @@ def _cut_to_bins(signal: np.ndarray, ts: np.ndarray, skip: int) -> Tuple[float, 
 
 @lru_cache
 def feynman_y_by_signal(par: Parameters, t: float,
+                        signal_generator=signal_make,
                         rand_gen: np.random.Generator = rand_gen) -> Tuple[np.array, np.array, np.array]:
     dt = min(0.01/abs(par.α), 1e-3)
     n = int(t/dt) + 1
     ts = np.linspace(0., t, n)
-    signal = signal_make(ts, par, rand_gen=rand_gen)
+    signal = signal_generator(ts, par, rand_gen=rand_gen)
     _times = int(np.log2(n))
     max_interval = min(1., t/8)
     resolutions = takewhile(lambda x: dt*x <= max_interval, map(lambda x: 2**x, range(2*_times)))
-    triplets = (_cut_to_bins(signal, ts, skip) for skip in resolutions)
+    triplets = (cut_to_bins(signal, ts, skip) for skip in resolutions)
     dts, fy, sigma = list(zip(*triplets))
     return np.array(dts, dtype=np.float64), np.array(fy, dtype=np.float64), np.array(sigma, dtype=np.float64)
 
