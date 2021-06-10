@@ -5,7 +5,7 @@ to observe the mean and variance of said counts in said windows.
 """
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Generator, Sequence, Tuple, List
+from typing import Sequence
 import logging
 
 import numpy as np
@@ -39,10 +39,17 @@ class AnalogParameters:
     pf: float
     pd: float
     multiplicity: Sequence[float]
-    tmax: float
+
+    @classmethod
+    def from_dubi(cls, ρ: float, Λ: float, s: float, multiplicity: Sequence[float], pd: float):
+        k = 1./(1.-ρ)
+        lifetime = Λ*k
+        nu = (multiplicity * np.arange(len(multiplicity))).sum()
+        pf = k/nu
+        return cls(lifetime, s, pf, pd, multiplicity)
 
     @property
-    def prob_vector(self) -> Tuple[float, ...]:
+    def prob_vector(self) -> tuple[float, ...]:
         return self.pd, self.pf, 1. - self.pd - self.pf
 
     @property
@@ -61,52 +68,44 @@ class AnalogParameters:
     def pa(self) -> float:
         return 1. - self.pf - self.pd
 
+    def __hash__(self):
+        return hash((self.lifetime, self.s, self.pf, self.pd, tuple(self.multiplicity)))
 
-def spread_sources(t: float, s: float, randgen: np.random.Generator) -> np.array:
+
+def spread_sources(t: float, s: float, rand_gen: np.random.Generator) -> np.array:
     points = int(s * t)
-    dt = randgen.exponential(scale=1./s, size=(points,))
+    dt = rand_gen.exponential(scale=1. / s, size=(points,))
     ts = np.cumsum(dt)
     return ts[ts < t]
 
 
-def _detections(sources: np.array, par: AnalogParameters, randgen: np.random.Generator
-                ) -> Generator[List[float], None, None]:
+def signal_make(ts: np.array,
+                par: AnalogParameters,
+                *,
+                rand_gen: np.random.Generator
+                ) -> np.array:
+    tmax = ts[-1]
+    sources = spread_sources(tmax, par.s, rand_gen=rand_gen)
     initial = len(sources)
     so_far = 0
     estimated = initial / (1. - par.k)
     last = 0.
+    res = np.zeros_like(ts[:-1])
+
     while len(sources):
-        lags = randgen.exponential(par.lifetime, size=sources.size)
+        lags = rand_gen.exponential(par.lifetime, size=sources.size)
         tevents = sources + lags
-        processes = randgen.choice(a=[e.value for e in Process], p=par.prob_vector, size=sources.size)
+        processes = rand_gen.choice(a=[e.value for e in Process], p=par.prob_vector, size=sources.size)
         detect = processes == Process.Detection.value
         fission = processes == Process.Fission.value
-        legal = tevents <= par.tmax
-        yield list(tevents[detect & legal])
+        legal = tevents <= tmax
+        res += np.histogram(tevents[detect & legal], bins=ts)[0]
         fission_times = tevents[fission & legal]
-        multiples = randgen.choice(a=np.arange(len(par.multiplicity)), p=par.multiplicity, size=fission_times.size)
+        multiples = rand_gen.choice(a=np.arange(len(par.multiplicity)), p=par.multiplicity, size=fission_times.size)
         so_far += sources.size
         sources = np.repeat(fission_times, multiples)
         covered = so_far/estimated
         if covered > last + 0.1:
             logger.info(f'Finished {covered:3.0%}')
             last = covered
-
-
-def detections(*args, func=_detections, **kwargs) -> np.array:
-    return np.array(sum(func(*args, **kwargs), []), dtype=np.float)
-
-
-def _feynman_y(signal: np.array, tmax: float) -> Generator[Tuple[float, float, float], None, None]:
-    dts = np.logspace(-3, np.log(tmax)/2, 30)
-    for dt in dts:
-        bins = np.linspace(0., tmax, int(tmax//dt))
-        hist, edges = np.histogram(signal, bins=bins)
-        if len(hist) > 1:
-            fy = (hist.var(ddof=1) / hist.mean()) - 1.
-            yield edges[1], fy, 1.
-
-
-def feynman_y(signal: np.array, tmax: float) -> Tuple[np.array, np.array, np.array]:
-    ts, fy, sigma = map(np.array, zip(*list(_feynman_y(signal, tmax))))
-    return ts, fy, sigma
+    return res
