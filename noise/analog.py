@@ -72,40 +72,36 @@ class AnalogParameters:
         return hash((self.lifetime, self.s, self.pf, self.pd, tuple(self.multiplicity)))
 
 
-def spread_sources(t: float, s: float, rand_gen: np.random.Generator) -> np.array:
+def spread_sources(t: float, s: float,
+                   rand_gen: np.random.Generator,
+                   shift: float = 0.) -> np.array:
     points = int(s * t)
     dt = rand_gen.exponential(scale=1. / s, size=(points,))
     ts = np.cumsum(dt)
-    return ts[ts < t]
+    return ts + shift
 
 
 def signal_make(ts: np.array,
                 par: AnalogParameters,
                 *,
+                chunks=6_000_000,
                 rand_gen: np.random.Generator
                 ) -> np.array:
     tmax = ts[-1]
-    sources = spread_sources(tmax, par.s, rand_gen=rand_gen)
-    initial = len(sources)
-    so_far = 0
-    estimated = initial / (1. - par.k)
-    last = 0.
     res = np.zeros_like(ts[:-1])
-
-    while len(sources):
-        lags = rand_gen.exponential(par.lifetime, size=sources.size)
-        tevents = sources + lags
-        processes = rand_gen.choice(a=[e.value for e in Process], p=par.prob_vector, size=sources.size)
-        detect = processes == Process.Detection.value
-        fission = processes == Process.Fission.value
-        legal = tevents <= tmax
-        res += np.histogram(tevents[detect & legal], bins=ts)[0]
-        fission_times = tevents[fission & legal]
-        multiples = rand_gen.choice(a=np.arange(len(par.multiplicity)), p=par.multiplicity, size=fission_times.size)
-        so_far += sources.size
-        sources = np.repeat(fission_times, multiples)
-        covered = so_far/estimated
-        if covered > last + 0.1:
-            logger.info(f'Finished {covered:3.0%}')
-            last = covered
+    shifts, interval = np.linspace(0., tmax, num=max(1, int(tmax*par.s//chunks)), retstep=True, endpoint=False)
+    for shift in shifts:
+        sources = shift + spread_sources(interval, par.s, rand_gen=rand_gen)
+        sources = sources[sources < tmax]
+        while len(sources):
+            lags = rand_gen.exponential(par.lifetime, size=sources.size)
+            tevents = sources + lags
+            processes = rand_gen.choice(a=[e.value for e in Process], p=par.prob_vector, size=sources.size)
+            detect = processes == Process.Detection.value
+            fission = processes == Process.Fission.value
+            legal = tevents <= tmax
+            res += np.histogram(tevents[detect & legal], bins=ts)[0]
+            fission_times = tevents[fission & legal]
+            multiples = rand_gen.choice(a=np.arange(len(par.multiplicity)), p=par.multiplicity, size=fission_times.size)
+            sources = np.repeat(fission_times, multiples)
     return res

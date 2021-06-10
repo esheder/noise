@@ -13,9 +13,8 @@ def test_sources():
     s = 1e6
     sources = spread_sources(t, s, rnd)
     assert len(sources) == pytest.approx(s*t, rel=1e-3)
-    assert max(sources) <= t
     assert min(sources) >= 0.
-    assert max(sources) > 0.99*t
+    assert 0.99*t < max(sources) < 1.1*t
 
 
 def test_plot_signal():
