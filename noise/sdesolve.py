@@ -22,13 +22,26 @@ def _hot_loop(x: np.ndarray, dt: np.ndarray, dx: np.ndarray, α: float) -> None:
         x[i] = x[i-1] + α*x[i-1]*dt[i-1] + dx[i-1]
 
 
-def signal_make(ts: np.ndarray, par: Parameters, *, rand_gen: np.random.Generator) -> np.ndarray:
+@njit(nogil=True)
+def _backward_hot_loop(x: np.ndarray, dt: np.ndarray, dx: np.ndarray, α: float) -> None:
+    for i in range(1, len(x)):
+        x[i] = (x[i-1] + dx[i-1]) / (1.-α*dt[i-1])
+
+
+@njit(nogil=True)
+def _theta_hot_loop(x: np.ndarray, dt: np.ndarray, dx: np.ndarray, α: float, θ: float) -> None:
+    for i in range(1, len(x)):
+        x[i] = (x[i-1] + dx[i-1] + (1.-θ)*α*x[i-1]*dt[i-1]) / (1.-θ*α*dt[i-1])
+
+
+def signal_make(ts: np.ndarray, par: Parameters, *, rand_gen: np.random.Generator,
+                loop=_hot_loop) -> np.ndarray:
     dt = np.diff(ts)
     rands = rand_gen.normal(0., np.sqrt(dt), (2, len(dt)))
     dnoise = par.σ2 * rands[1, :]
     dx = par.s*dt + par.σ1*rands[0, :] - dnoise
     x = par.equilibrium_flux * np.ones_like(ts, dtype=np.float64)
-    _hot_loop(x, dt, dx, par.α)
+    loop(x, dt, dx, par.α)
     y = np.zeros_like(ts, dtype=np.float64)
     y[1:] = par.λd*x[:-1]*dt + dnoise
     return y
