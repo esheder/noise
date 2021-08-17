@@ -26,5 +26,5 @@ if __name__ == '__main__':
     mask = (ts <= 1e-1)
     tfit, cfit, sfit = ts[mask], curve[mask], sigma[mask]
     popt, pcov = fit_to_feynman_y(tfit, cfit, sfit)
-    with open(f'seed.{args.seed}', 'w') as f:
+    with open(f'seed.{args.seed}.theta.{args.theta:.1f}', 'w') as f:
         f.write(f'{args.seed},{popt[0]:.5e},{popt[1]:.5e}\n')
