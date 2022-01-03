@@ -73,5 +73,5 @@ if __name__ == '__main__':
             f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},'
                     f'{t:.6e},{seed},'
                     f'{popt[0]:.5e},{popt[1]:.5e},'
-                    f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e}'
+                    f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e},'
                     f'{pcov[1, 0]:.5e},{pcov[1, 1]:.5e}\n')
