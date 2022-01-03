@@ -54,7 +54,6 @@ def cut_to_bins(signal: np.ndarray, ts: np.ndarray, skip: int) -> Tuple[float, f
     return ts[skip], fy, sigma
 
 
-@lru_cache
 def feynman_y_by_signal(par: Parameters, t: float,
                         signal_generator=signal_make,
                         rand_gen: np.random.Generator = rand_gen) -> Tuple[np.array, np.array, np.array]:

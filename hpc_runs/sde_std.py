@@ -31,13 +31,19 @@ if __name__ == '__main__':
     parser.add_argument('--seeds',
                         type=int,
                         help="Maximal seed to use in generator",
-                        default=200)
+                        default=1000)
+    parser.add_argument('--batch', type=int, help="Batch of calculations to run.", default=50)
+    parser.add_argument('--total', action='store_true', help="Flag to say how big index should go")
+    parser.add_argument('--arguments', action='store_true', help="Flag to print out the argument names")
     args = parser.parse_args()
-    superdex, seed = divmod(args.index-1, args.seeds)
+    if args.total:
+        print(int(len(arguments)*10*args.seeds/args.batch))
+        exit(0)
+    rundex = args.index*args.batch
+    superdex, seed0 = divmod(rundex-args.batch, args.seeds)
     index, argdex = divmod(superdex, len(arguments))
     argument = arguments[argdex]
-    generator = np.random.Generator(np.random.SFC64(seed))
-    print(f'{argument=},{index=},{seed=}')
+    print(f'{argument=},{index=},{seed0=}')
     if argument in defaults:
         defaults[argument] = vectors[argument][index]
         t = times[0]
@@ -47,13 +53,20 @@ if __name__ == '__main__':
         raise ValueError("Argument must be of a given set: "
                          f"{arguments}")
     par = Parameters.from_dubi(ν=nu, ν2=moment2, **defaults)
-    ts, curve, sigma = feynman_y_by_signal(par, t, rand_gen=generator)
-    mask = (ts <= 1e-1)
-    tfit, cfit, sfit = ts[mask], curve[mask], sigma[mask]
-    popt, pcov = fit_to_feynman_y(tfit, cfit, sfit)
-    with (args.pdir / f'sde_std.{argument}.{index}.{seed}').open('w') as f:
-        f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},'
-                f'{t:.6e},{seed},'
-                f'{popt[0]:.5e},{popt[1]:.5e},'
-                f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e}'
-                f'{pcov[1, 0]:.5e},{pcov[1, 1]:.5e}\n')
+    res = {}
+    seeds = range(seed0, seed0+args.batch+1)
+    for seed in seeds:
+        generator = np.random.Generator(np.random.SFC64(seed))
+        ts, curve, sigma = feynman_y_by_signal(par, t, rand_gen=generator)
+        mask = (ts <= 1e-1)
+        tfit, cfit, sfit = ts[mask], curve[mask], sigma[mask]
+        popt, pcov = fit_to_feynman_y(tfit, cfit, sfit)
+        res[seed] = (popt, pcov)
+    with (args.pdir / f'sde_std.{args.index}.csv').open('w') as f:
+        for seed in seeds:
+            popt, pcov = res[seed]
+            f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},'
+                    f'{t:.6e},{seed},'
+                    f'{popt[0]:.5e},{popt[1]:.5e},'
+                    f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e}'
+                    f'{pcov[1, 0]:.5e},{pcov[1, 1]:.5e}\n')
