@@ -16,6 +16,8 @@ lifetimes = np.logspace(-6, -4, num=10)
 sources = np.logspace(3, 7, num=10)
 detections = np.logspace(-6, -2, num=10)
 times = np.logspace(np.log10(60), np.log10(3600), num=10)
+parameters = ('Reactivity', 'Lifetime', 'Source', 'Detection Rate', 'Measurement Time', 'Seed', 'Inf', 'Alpha',
+              'CovInf', 'CovInfAlpha', 'CovAlphaInf', 'ConvAlphaAlpha')
 defaults = {'ρ': reactivities[-1], 'Λ': lifetimes[-2],
             's': sources[5], 'pd': detections[5]}
 vectors = {'ρ': reactivities, 'Λ': lifetimes,
@@ -38,6 +40,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.total:
         print(int(len(arguments)*10*args.seeds/args.batch))
+        exit(0)
+    elif args.arguments:
+        print(','.join(parameters))
         exit(0)
     rundex = args.index*args.batch
     superdex, seed0 = divmod(rundex-args.batch, args.seeds)
