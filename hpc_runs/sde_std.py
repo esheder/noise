@@ -53,5 +53,7 @@ if __name__ == '__main__':
     popt, pcov = fit_to_feynman_y(tfit, cfit, sfit)
     with (args.pdir / f'sde_std.{argument}.{index}.{seed}').open('w') as f:
         f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},'
-                f'{t:.6e},{seed},{elapsed:.4e},'
-                f'{popt[0]:.5e},{popt[1]:.5e}\n')
+                f'{t:.6e},{seed},'
+                f'{popt[0]:.5e},{popt[1]:.5e},'
+                f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e}'
+                f'{pcov[1, 0]:.5e},{pcov[1, 1]:.5e}\n')
