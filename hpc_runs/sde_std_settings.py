@@ -55,7 +55,7 @@ if __name__ == '__main__':
     else:
         raise ValueError("Argument must be of a given set: "
                          f"{arguments}")
-    par = Parameters.from_dubi(ν=nu, ν2=moment2, ρ=args.reactivity, **defaults)
+    par = Parameters.from_dubi(ν=nu, ν2=moment2, ρ=-args.reactivity, **defaults)
     res = {}
     seeds = range(seed0, seed0+args.batch+1)
     for seed in seeds:
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     with (args.pdir / f'sde_std.reac{args.reactivity:.5e}.{args.index}.csv').open('w') as f:
         for seed in seeds:
             popt, pcov = res[seed]
-            f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},{args.reactivity},'
+            f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},{-args.reactivity},'
                     f'{t:.6e},{seed},'
                     f'{popt[0]:.5e},{popt[1]:.5e},'
                     f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e},'
