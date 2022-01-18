@@ -11,23 +11,21 @@ from noise.sdesolve import feynman_y_by_signal
 multiplicity = np.array([0.13, 0.22, 0.2, 0.2, 0.1, 0.1, 0.05])
 nu = (multiplicity * np.arange(len(multiplicity))).sum()
 moment2 = (multiplicity * (np.arange(len(multiplicity)) ** 2)).sum()
-reactivities = -1e-5*np.logspace(np.log10(50), 3, num=10)
 lifetimes = np.logspace(-6, -4, num=10)
 sources = np.logspace(3, 7, num=10)
 detections = np.logspace(-6, -2, num=10)
-times = np.logspace(np.log10(60), np.log10(3600), num=10)
+times = np.logspace(np.log10(60), np.log10(10*3600), num=10)
 parameters = ('Reactivity', 'Lifetime', 'Source', 'Detection Rate', 'Measurement Time', 'Seed', 'Inf', 'Alpha',
               'CovInf', 'CovInfAlpha', 'CovAlphaInf', 'ConvAlphaAlpha')
-defaults = {'ρ': reactivities[-1], 'Λ': lifetimes[-2],
-            's': sources[5], 'pd': detections[5]}
-vectors = {'ρ': reactivities, 'Λ': lifetimes,
-           's': sources, 'pd': detections}
-arguments = list(vectors.keys()) + ['time']
+defaults = {'Λ': lifetimes[-2], 's': sources[5], 'pd': detections[5]}
+vectors = {'Λ': lifetimes, 's': sources, 'pd': detections}
+arguments = ['s', 'pd'] + ['time']
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Tool for creating signals')
     parser.add_argument('index', type=int, help="Index in the options for the argument to use")
+    parser.add_argument('reactivity', type=float, help="The system reactivity to test at")
     parser.add_argument('--pdir', type=Path, help="Path to dir to use",
                         default=Path.cwd())
     parser.add_argument('--seeds',
@@ -57,7 +55,7 @@ if __name__ == '__main__':
     else:
         raise ValueError("Argument must be of a given set: "
                          f"{arguments}")
-    par = Parameters.from_dubi(ν=nu, ν2=moment2, **defaults)
+    par = Parameters.from_dubi(ν=nu, ν2=moment2, ρ=args.reactivity, **defaults)
     res = {}
     seeds = range(seed0, seed0+args.batch+1)
     for seed in seeds:
@@ -67,10 +65,10 @@ if __name__ == '__main__':
         tfit, cfit, sfit = ts[mask], curve[mask], sigma[mask]
         popt, pcov = fit_to_feynman_y(tfit, cfit, sfit)
         res[seed] = (popt, pcov)
-    with (args.pdir / f'sde_std.{args.index}.csv').open('w') as f:
+    with (args.pdir / f'sde_std.reac{args.reactivity:.5e}.{args.index}.csv').open('w') as f:
         for seed in seeds:
             popt, pcov = res[seed]
-            f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},'
+            f.write(f'{",".join([f"{x:.6e}" for x in defaults.values()])},{args.reactivity},'
                     f'{t:.6e},{seed},'
                     f'{popt[0]:.5e},{popt[1]:.5e},'
                     f'{pcov[0, 0]:.5e},{pcov[0, 1]:.5e},'
