@@ -43,6 +43,8 @@ To get the results of a Feynman-Y fit to a simulated experiment, one can use the
 Under the `noise` directory you will find our package. 
 For most applications, researchers will just need this directory and the `setup.py` file to get things started.
 
+Under the `examples` directory you will find examples for how to use the code. These appear as both Python scripts and Jupyter notebooks.
+
 Under the `hpc_runs` directory you will find the data analysis used in our upcoming paper, as well as scripts we used to generate said data.
 The `data_analysis.ipynb` file in this directory is directly used to generate our figures and estimates.
 The `analysis_data.gz` file is a compressed `.tar` file that includes the csv files used in this analysis, and can be opened with many decompression software.
