@@ -5,6 +5,10 @@ Chen Dubi et al. have developed a coupled 2 SDE system that has the same varianc
 Using that model we can generate for any core parameters a set of detection signals by solving an SDE.
 This should be typically much faster than the existing methods that are based on Monte Carlo simulations of the time based branching process.
 
+## How to install this package
+We recommend working in a virtual environment, either through `virtualenv`, `conda`, or any other means.
+To install, simply use `pip` with the command `pip install .` in the main directory of this repository or `pip install -e .` for an editable installation.
+
 ## How to use this code
 We mostly expect researchers to want one of two things: Either they want to generate experiment-like signals of detections in a given system, or they want to skip the signal itself and send the results through a Feynman-Y fitting procedure to retrieve results that simulate those from an experiment.
 
