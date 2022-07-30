@@ -38,6 +38,19 @@ To get the results of a Feynman-Y fit to a simulated experiment, one can use the
 	This function takes the triplet of arrays (the assumed statistical noise estimate may be omitted).
 	It returns a fit result from `scipy.optimize.curve_fit` for the Feynman-Y curve, which is a pair of fit parameters and fit covariances.
 	Researchers that fit to a different curve may of course use their own curve fitting tools.
+	
+## Project Structure
+Under the `noise` directory you will find our package. 
+For most applications, researchers will just need this directory and the `setup.py` file to get things started.
+
+Under the `hpc_runs` directory you will find the data analysis used in our upcoming paper, as well as scripts we used to generate said data.
+The `data_analysis.ipynb` file in this directory is directly used to generate our figures and estimates.
+The `analysis_data.gz` file is a compressed `.tar` file that includes the csv files used in this analysis, and can be opened with many decompression software.
+The Python and Bash files in that directory are the scripts we used to generate the csv files on the NegevHPC cluster. They are there just in case we want to reproduce our results on that cluster in the future, and are not meant for use by other researchers. You may view them as additional examples of lower quality, if you like.
+
+Under the `tests` directory you will find our unit tests.
+We could have more of these, and if we get more researchers interested in this code this would be higher own our to-do list.
+You can consider contributing tests yourself, actually. It's a good place for new contributers to start.
 
 ## Implementation
 Our implementation is currently done in Python. This could change later if found to be necessary.
