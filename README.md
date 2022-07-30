@@ -12,7 +12,7 @@ To install, simply use `pip` with the command `pip install .` in the main direct
 ## How to use this code
 We mostly expect researchers to want one of two things: Either they want to generate experiment-like signals of detections in a given system, or they want to skip the signal itself and send the results through a Feynman-Y fitting procedure to retrieve results that simulate those from an experiment.
 
-To do this, we supply two main interfaces, as explained below. Examples are given in the [examples](https://github.com/esheder/noise/tree/master/examples) folder in both a Jupyter notebook and a Python script format.
+To do this, we supply two main interfaces, as explained in the examples. Examples are given in the [examples](https://github.com/esheder/noise/tree/master/examples) folder in both a Jupyter notebook and a Python script format.
 We recommend looking over there first.
 The code under `noise.analog` is used for verification of our solution, and has a similar structure, so once you understand the two interfaces below, using the analog solver should be fairly trivial for you as well.
 
